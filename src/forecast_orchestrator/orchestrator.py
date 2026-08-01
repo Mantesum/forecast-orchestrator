@@ -417,7 +417,15 @@ class ForecastOrchestrator:
 
 def _is_not_yet_published(error: CommandFailure) -> bool:
     output = error.result.combined_output.lower()
-    return "has not been published" in output or "run unavailable" in output
+    markers = (
+        "has not been published",
+        "run unavailable",
+        # NOMADS currently returns 403 (rather than 404) while an explicit GFS
+        # cycle or its final forecast step is not available yet.
+        "availability probe returned http 403 for https://nomads.ncep.noaa.gov/",
+        "availability probe returned http 404 for https://nomads.ncep.noaa.gov/",
+    )
+    return any(marker in output for marker in markers)
 
 
 def _manifest_from_download_output(stdout: str) -> Path:

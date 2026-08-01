@@ -122,6 +122,22 @@ class FailingConversionRunner(FakeRunner):
         return super().run_json(args, timeout=timeout, **kwargs)
 
 
+class PendingNoaaCycleRunner(FakeRunner):
+    def run_json(self, args: list[str], *, timeout: int, **kwargs: object) -> dict[str, Any]:
+        if args[0:2] == ["ingest", "plan"]:
+            config = _yaml_after(args, "--config")
+            if config["request"]["run"] == "2026-08-01T18:00:00Z":
+                result = CommandResult(
+                    tuple(args),
+                    5,
+                    "",
+                    "availability probe returned HTTP 403 for "
+                    "https://nomads.ncep.noaa.gov/pub/data/pending.idx",
+                )
+                raise CommandFailure("pending NOAA cycle", result)
+        return super().run_json(args, timeout=timeout, **kwargs)
+
+
 def _yaml_after(args: list[str], option: str) -> dict[str, Any]:
     path = Path(args[args.index(option) + 1])
     value = yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -220,3 +236,13 @@ def test_conversion_failure_keeps_previous_forecast_and_grib(tmp_path: Path) -> 
     failed = orchestrator.status()["jobs"][0]
     assert failed["status"] == "failed"
     assert Path(failed["manifest_path"]).is_file()
+
+
+def test_pending_noaa_cycle_falls_back_to_latest_complete_cycle(tmp_path: Path) -> None:
+    config = _config(tmp_path)
+    orchestrator = ForecastOrchestrator(config, runner=PendingNoaaCycleRunner())
+
+    outcome = orchestrator.run_once(now=datetime(2026, 8, 1, 18, 30, tzinfo=UTC))
+
+    assert outcome["status"] == "ready"
+    assert outcome["run_utc"] == "2026-08-01T12:00:00Z"
