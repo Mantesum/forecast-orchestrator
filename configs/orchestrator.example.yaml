@@ -1,0 +1,79 @@
+schema_version: "1.0"
+
+# Exactly one source and one configured profile are active at a time.
+active_source: gfs
+profile: full_energy
+
+sources:
+  gfs:
+    provider: noaa-gfs
+    model: gfs
+    cycles_utc: [0, 6, 12, 18]
+    profiles:
+      weather:
+        ingest_config: /etc/forecast-ingest/gfs-global-weather-10day.yaml
+        zarr_config: /etc/forecast-zarr/gfs-global-weather-10day.yaml
+      wind_energy:
+        ingest_config: /etc/forecast-ingest/gfs-global-wind-energy-10day.yaml
+        zarr_config: /etc/forecast-zarr/gfs-global-wind-energy-10day.yaml
+      solar_energy:
+        ingest_config: /etc/forecast-ingest/gfs-global-solar-energy-10day.yaml
+        zarr_config: /etc/forecast-zarr/gfs-global-solar-energy-10day.yaml
+      full_energy:
+        ingest_config: /etc/forecast-ingest/gfs-global-full-energy-10day.yaml
+        zarr_config: /etc/forecast-zarr/gfs-global-full-energy-10day.yaml
+
+  # Create matching IFS templates before selecting this source. Open ECMWF data
+  # does not provide every GFS full_energy field, so unsupported variables are
+  # rejected by default rather than silently publishing a partial profile.
+  ifs:
+    provider: ecmwf-ifs
+    model: ifs
+    cycles_utc: [0, 6, 12, 18]
+    profiles:
+      weather:
+        ingest_config: /etc/forecast-ingest/ifs-weather.yaml
+        zarr_config: /etc/forecast-zarr/ifs-weather.yaml
+
+  aifs:
+    provider: ecmwf-aifs-single
+    model: aifs-single
+    cycles_utc: [0, 6, 12, 18]
+    profiles:
+      weather:
+        ingest_config: /etc/forecast-ingest/aifs-global-light.yaml
+        zarr_config: /etc/forecast-zarr/aifs-global-light.yaml
+
+schedule:
+  # systemd invokes run-once at this interval. A completed cycle is processed once.
+  poll_interval_minutes: 10
+  maximum_start_delay_minutes: 30
+  lookback_hours: 30
+
+publication:
+  backend: filesystem
+  root: /srv/forecast-public
+  datasets_directory: datasets
+  pointer: current.json
+  symlink: current.zarr
+
+retention:
+  # Delete all source GRIB only after the matching Zarr is validated and published.
+  grib_runs_after_publish: 0
+  # Keep the current Zarr but no permanent historical Zarr runs.
+  previous_zarr_runs: 0
+  # Keep a superseded store briefly for API requests already in progress.
+  zarr_deletion_grace_minutes: 60
+  failed_staging_ttl_hours: 72
+
+commands:
+  ingest_executable: /opt/forecast-ingest/.venv/bin/forecast-ingest
+  zarr_executable: /opt/forecast-zarr-processor/.venv/bin/forecast-zarr
+  probe_timeout_seconds: 120
+  download_timeout_seconds: 21600
+  conversion_timeout_seconds: 21600
+  validation_timeout_seconds: 3600
+
+state:
+  directory: /var/lib/forecast-orchestrator
+

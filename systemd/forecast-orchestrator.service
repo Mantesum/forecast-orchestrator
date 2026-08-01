@@ -1,0 +1,25 @@
+[Unit]
+Description=Download and publish the next complete weather forecast
+Wants=network-online.target
+After=network-online.target
+ConditionPathIsReadWrite=/var/lib/forecast-orchestrator
+ConditionPathIsReadWrite=/srv/forecast-public
+
+[Service]
+Type=oneshot
+User=forecast-orchestrator
+Group=forecast-orchestrator
+WorkingDirectory=/opt/forecast-orchestrator
+Environment=PYTHONUNBUFFERED=1
+ExecStartPre=/opt/forecast-orchestrator/.venv/bin/forecast-orchestrator doctor --config /etc/forecast-orchestrator/orchestrator.yaml
+ExecStart=/opt/forecast-orchestrator/.venv/bin/forecast-orchestrator run-once --config /etc/forecast-orchestrator/orchestrator.yaml
+MemoryMax=8G
+TasksMax=128
+UMask=0027
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/forecast-orchestrator /var/lib/forecast-ingest/data /srv/forecast-public
+LockPersonality=true
+

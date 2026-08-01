@@ -1,0 +1,13 @@
+[Unit]
+Description=Check every ten minutes for a complete forecast cycle
+
+[Timer]
+OnBootSec=2min
+OnUnitInactiveSec=10min
+AccuracySec=1min
+RandomizedDelaySec=30s
+Unit=forecast-orchestrator.service
+
+[Install]
+WantedBy=timers.target
+
