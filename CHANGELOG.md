@@ -15,3 +15,4 @@ All notable changes to this project are documented here.
 - Treat NOMADS 403/404 availability responses as a pending GFS cycle and fall back to the
   latest complete cycle.
 - Allow the systemd oneshot up to 14 hours for full ingest, conversion, and validation.
+- Increase the default child planning timeout to 30 minutes for global `full_energy` runs.

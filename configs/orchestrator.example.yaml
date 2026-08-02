@@ -69,11 +69,12 @@ retention:
 commands:
   ingest_executable: /opt/forecast-ingest/.venv/bin/forecast-ingest
   zarr_executable: /opt/forecast-zarr-processor/.venv/bin/forecast-zarr
-  probe_timeout_seconds: 120
+  # A full global Zarr planning pass reads the GRIB inventory and can exceed a
+  # short network-probe timeout.
+  probe_timeout_seconds: 1800
   download_timeout_seconds: 21600
   conversion_timeout_seconds: 21600
   validation_timeout_seconds: 3600
 
 state:
   directory: /var/lib/forecast-orchestrator
-

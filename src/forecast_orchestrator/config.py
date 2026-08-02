@@ -87,7 +87,9 @@ class RetentionConfig(StrictModel):
 class CommandConfig(StrictModel):
     ingest_executable: str = "forecast-ingest"
     zarr_executable: str = "forecast-zarr"
-    probe_timeout_seconds: int = Field(default=120, ge=10, le=3600)
+    # Building an inventory for a global full_energy GRIB run can take several
+    # minutes, even though the NOAA availability probe itself is fast.
+    probe_timeout_seconds: int = Field(default=1800, ge=10, le=3600)
     download_timeout_seconds: int = Field(default=21600, ge=60, le=86400)
     conversion_timeout_seconds: int = Field(default=21600, ge=60, le=86400)
     validation_timeout_seconds: int = Field(default=3600, ge=60, le=21600)

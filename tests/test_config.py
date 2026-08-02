@@ -41,6 +41,7 @@ def test_load_config_resolves_paths_and_normalizes_cycles(tmp_path: Path) -> Non
     assert config.selected_profile.ingest_config == (tmp_path / "ingest.yaml").resolve()
     assert config.publication.root == (tmp_path / "public").resolve()
     assert config.state.directory == (tmp_path / "state").resolve()
+    assert config.commands.probe_timeout_seconds == 1800
 
 
 def test_active_profile_must_be_configured(tmp_path: Path) -> None:
